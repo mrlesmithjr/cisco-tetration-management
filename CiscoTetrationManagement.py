@@ -49,6 +49,10 @@ Create an application by appscopeshortname
 ------------------------------------------
 python CiscoTetrationManagement.py create_app --apiendpoint https://172.16.5.4 --credsfile api_credentials.json --appname "Test App" --appdescription "Test App Using API" --appscopeprimary False --appscopeshortname "xxxxx"
 
+View an application clusters
+----------------------------
+python CiscoTetrationManagement.py get_app_clusters --apiendpoint https://172.16.5.4 --credsfile api_credentials.json --appid 59cdc1e7755f0225066ce9d4
+
 Delete an application
 ---------------------
 python CiscoTetrationManagement.py delete_app --apiendpoint https://172.16.5.4 --credsfile api_credentials.json --appid 59cdc1e7755f0225066ce9d4
@@ -87,6 +91,8 @@ class Tetration(object):
             self.delete_app()
         if self.args.action == "get_app":
             self.get_app()
+        if self.args.action == "get_app_clusters":
+            self.get_app_clusters()
         if self.args.action == "get_apps":
             self.get_apps()
         # if self.args.action == "get_app_scope_ids":
@@ -226,6 +232,19 @@ class Tetration(object):
         if resp.status_code == 200:
             python_data = json.loads(resp.text)
             print json.dumps(python_data, indent=4)
+
+    def get_app_clusters(self):
+        """
+        Capture Specific Application
+        """
+        resp = self.restclient.get(
+            '/applications/%s/details' % self.args.appid
+        )
+        if resp.status_code == 200:
+            python_data = json.loads(resp.text)
+            _data = {}
+            _data.update({'Clusters': python_data['clusters']})
+            print json.dumps(_data, indent=4)
 
     def get_apps(self):
         """
@@ -488,6 +507,7 @@ class Tetration(object):
                                                              'create_app',
                                                              'delete_app',
                                                              'get_app',
+                                                             'get_app_clusters',
                                                              'get_apps',
                                                              'get_app_scope',
                                                              'get_app_scopes',
@@ -559,6 +579,9 @@ class Tetration(object):
             if (self.args.appname is not None and
                     self.args.appid is None and self.args.appscopeid is None):
                 parser.error('--appscopeid is REQUIRED when using --appname!')
+        if self.args.action == "get_app_clusters":
+            if self.args.appid is None:
+                parser.error('--appid is REQUIRED!')
         if self.args.action == "get_app_scope":
             if self.args.appscopeid is None:
                 if self.args.appscopeshortname is None:
