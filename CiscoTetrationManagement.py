@@ -188,8 +188,8 @@ class Tetration(object):
             resp = self.restclient.delete(
                 '/applications/%s' % self.args.appid)
             if resp.status_code == 200:
-                print colored(('Application with id: %s') % self.args.appid +
-                              " successfully deleted...")
+                print colored('Application with id: %s'
+                              % self.args.appid, 'yellow') + " successfully deleted..."
         else:
             print colored('Application with id: %s' % self.args.appid, 'yellow') + " not found..."
 
@@ -273,7 +273,8 @@ class Tetration(object):
                 if self.args.savetofile:
                     self.save_results(python_data)
                 else:
-                    print json.dumps(python_data, indent=4)
+                    if self.args.action != "create_application":
+                        print json.dumps(python_data, indent=4)
 
     # def get_app_scope_ids(self):
     #     """
