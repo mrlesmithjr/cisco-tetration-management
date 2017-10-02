@@ -8,9 +8,6 @@ import json
 from tetpyclient import RestClient
 from termcolor import colored
 
-# API_ENDPOINT = "https://172.16.5.4"
-# CREDS_FILE = "./credentials.json"
-
 __author__ = "Larry Smith Jr."
 __email___ = "mrlesmithjr@gmail.com"
 __maintainer__ = "Larry Smith Jr."
