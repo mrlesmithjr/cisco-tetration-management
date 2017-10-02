@@ -248,8 +248,11 @@ class Tetration(object):
         if resp.status_code == 200:
             python_data = json.loads(resp.text)
             _data = {}
-            _data.update({'Clusters': python_data['clusters']})
-            print json.dumps(_data, indent=4)
+            if 'clusters' in python_data:
+                _data.update({'Clusters': python_data['clusters']})
+                print json.dumps(_data, indent=4)
+            else:
+                print colored('No clusters found for app!...Run ADM?', 'yellow')
 
     def get_apps(self):
         """
