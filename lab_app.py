@@ -165,11 +165,15 @@ class Tetration(object):
         Create An Application
         """
         self.get_apps()
+        if self.args.appdescription is None:
+            appdescription = ""
+        else:
+            appdescription = self.args.appdescription
         if self.app_name is None:
             req_payload = {
                 "app_scope_id": self.app_scope_id,
                 "name": self.args.appname,
-                "description": self.args.appdescription,
+                "description": appdescription,
                 "primary": self.args.appscopeprimary
             }
             resp = self.restclient.post(
@@ -516,9 +520,11 @@ class Tetration(object):
         parser.add_argument(
             '--appscopeshortname', help='Application Scope Short Name', required=False)
         parser.add_argument(
-            '--appscopeprimary', help='Application Scope Primary(True|False)', required=False)
+            '--appscopeprimary', help='Application Scope Primary(True|False)', required=False,
+            default=False)
         parser.add_argument(
-            '--credsfile', help='Path To Credentials file', required=False, default="~\\downloads\\api_credentials.json")
+            '--credsfile', help='Path To Credentials file', required=False,
+            default="~\\downloads\\api_credentials.json")
         parser.add_argument(
             '--savetofile', help='Define file to save results to')
         parser.add_argument(
@@ -539,10 +545,8 @@ class Tetration(object):
                 parser.error(
                     '--userfirstname and --userlastname and --useremail ARE REQUIRED!')
         if self.args.action == "create_app":
-            if (self.args.appname is None or self.args.appdescription is None or
-                    self.args.appscopeprimary is None):
-                parser.error(
-                    '--appname, --appdescription, and --appscopeprimary are REQUIRED!')
+            if self.args.appname is None:
+                parser.error('--appname is REQUIRED!')
             if self.args.appscopeid is None:
                 if self.args.appscopeshortname is None:
                     parser.error('--appscopeid or --appscopename is REQUIRED!')
