@@ -44,9 +44,13 @@ View a specific application by using app name and appscopeid
 ------------------------------------------------------------
 python CiscoTetrationManagement.py get_application --apiendpoint https://172.16.5.4 --credsfile api_credentials.json --appname "Tenant2" --appscopeid 599f4f35755f0237896ce9cf
 
-Create an application
----------------------
-python CiscoTetrationManagement.py create_application --apiendpoint https://172.16.5.4 --credsfile api_credentials.json --appname "Test App" --appdescription "Test App Using API" --appscopeprimary False
+Create an application by appscopeid
+-----------------------------------
+python CiscoTetrationManagement.py create_application --apiendpoint https://172.16.5.4 --credsfile api_credentials.json --appname "Test App" --appdescription "Test App Using API" --appscopeprimary False --appscopeid xxxxxx
+
+Create an application by appscopeshortname
+------------------------------------------
+python CiscoTetrationManagement.py create_application --apiendpoint https://172.16.5.4 --credsfile api_credentials.json --appname "Test App" --appdescription "Test App Using API" --appscopeprimary False --appscopeshortname "xxxxx"
 
 Delete an application
 ---------------------
@@ -208,6 +212,8 @@ class Tetration(object):
             if self.args.appid is not None and self.args.appname is None:
                 resp = self.restclient.get(
                     '/applications/%s/details' % self.args.appid)
+                if resp.status_code == 404:
+                    print colored('Application not found...', 'yellow')
             if self.args.appid is None and self.args.appname is not None:
                 self.get_applications()
                 if self.app_id is not None:
