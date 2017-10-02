@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 """
-This is a demo Cisco Tetration Analytics Python script
+Cisco Tetration Analytics Python script
 """
 
 import argparse
