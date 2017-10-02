@@ -514,7 +514,7 @@ class Tetration(object):
         parser.add_argument(
             '--appscopeprimary', help='Application Scope Primary(True|False)', required=False)
         parser.add_argument(
-            '--credsfile', help='Path To Credentials file', required=False)
+            '--credsfile', help='Path To Credentials file', required=False, default="~\downloads\api_credentials.json")
         parser.add_argument(
             '--savetofile', help='Define file to save results to')
         parser.add_argument(
