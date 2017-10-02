@@ -495,7 +495,8 @@ class Tetration(object):
                                                              'get_sensors', 'get_users',
                                                              'remove_user_from_role'])
         parser.add_argument(
-            '--apiendpoint', help='Tetration API Endpoint', required=True)
+            '--apiendpoint', help='Tetration API Endpoint', required=False,
+            default='https://172.16.5.4')
         parser.add_argument(
             '--apikey', help='Tetration API Key', required=False)
         parser.add_argument(
