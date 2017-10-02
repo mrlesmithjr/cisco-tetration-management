@@ -19,39 +19,39 @@ __status__ = "Development"
 EXAMPLES = """
 View application scopes
 -----------------------
-python CiscoTetrationManagement.py get_application_scopes --apiendpoint https://172.16.5.4 --credsfile api_credentials.json
+python CiscoTetrationManagement.py get_app_scopes --apiendpoint https://172.16.5.4 --credsfile api_credentials.json
 
 View application scope by name
 ------------------------------
-python CiscoTetrationManagement.py get_application_scope --apiendpoint https://172.16.5.4 --credsfile api_credentials.json --appscopeshortname "Demo"
+python CiscoTetrationManagement.py get_app_scope --apiendpoint https://172.16.5.4 --credsfile api_credentials.json --appscopeshortname "Demo"
 
 View application scope by id
 ----------------------------
-python CiscoTetrationManagement.py get_application_scope --apiendpoint https://172.16.5.4 --credsfile api_credentials.json --appscopeid 599f4f35755f0237896ce9cf
+python CiscoTetrationManagement.py get_app_scope --apiendpoint https://172.16.5.4 --credsfile api_credentials.json --appscopeid 599f4f35755f0237896ce9cf
 
 View applications
 -----------------
-python CiscoTetrationManagement.py get_applications --apiendpoint https://172.16.5.4 --credsfile api_credentials.json
+python CiscoTetrationManagement.py get_apps --apiendpoint https://172.16.5.4 --credsfile api_credentials.json
 
 View a specific application by using app id
 -------------------------------------------
-python CiscoTetrationManagement.py get_application --apiendpoint https://172.16.5.4 --credsfile api_credentials.json --appid 59cdc1e7755f0225066ce9d4
+python CiscoTetrationManagement.py get_app --apiendpoint https://172.16.5.4 --credsfile api_credentials.json --appid 59cdc1e7755f0225066ce9d4
 
 View a specific application by using app name and appscopeid
 ------------------------------------------------------------
-python CiscoTetrationManagement.py get_application --apiendpoint https://172.16.5.4 --credsfile api_credentials.json --appname "Tenant2" --appscopeid 599f4f35755f0237896ce9cf
+python CiscoTetrationManagement.py get_app --apiendpoint https://172.16.5.4 --credsfile api_credentials.json --appname "Tenant2" --appscopeid 599f4f35755f0237896ce9cf
 
 Create an application by appscopeid
 -----------------------------------
-python CiscoTetrationManagement.py create_application --apiendpoint https://172.16.5.4 --credsfile api_credentials.json --appname "Test App" --appdescription "Test App Using API" --appscopeprimary False --appscopeid xxxxxx
+python CiscoTetrationManagement.py create_app --apiendpoint https://172.16.5.4 --credsfile api_credentials.json --appname "Test App" --appdescription "Test App Using API" --appscopeprimary False --appscopeid xxxxxx
 
 Create an application by appscopeshortname
 ------------------------------------------
-python CiscoTetrationManagement.py create_application --apiendpoint https://172.16.5.4 --credsfile api_credentials.json --appname "Test App" --appdescription "Test App Using API" --appscopeprimary False --appscopeshortname "xxxxx"
+python CiscoTetrationManagement.py create_app --apiendpoint https://172.16.5.4 --credsfile api_credentials.json --appname "Test App" --appdescription "Test App Using API" --appscopeprimary False --appscopeshortname "xxxxx"
 
 Delete an application
 ---------------------
-python CiscoTetrationManagement.py delete_application --apiendpoint https://172.16.5.4 --credsfile api_credentials.json --appid 59cdc1e7755f0225066ce9d4
+python CiscoTetrationManagement.py delete_app --apiendpoint https://172.16.5.4 --credsfile api_credentials.json --appid 59cdc1e7755f0225066ce9d4
 
 """
 class Tetration(object):
@@ -81,20 +81,20 @@ class Tetration(object):
             self.add_user_to_role()
         if self.args.action == "add_users":
             self.add_users()
-        if self.args.action == "create_application":
-            self.create_application()
-        if self.args.action == "delete_application":
-            self.delete_application()
-        if self.args.action == "get_application":
-            self.get_application()
-        if self.args.action == "get_applications":
-            self.get_applications()
+        if self.args.action == "create_app":
+            self.create_app()
+        if self.args.action == "delete_app":
+            self.delete_app()
+        if self.args.action == "get_app":
+            self.get_app()
+        if self.args.action == "get_apps":
+            self.get_apps()
         # if self.args.action == "get_app_scope_ids":
         #     self.get_app_scope_ids()
-        if self.args.action == "get_application_scope":
-            self.get_application_scope()
-        if self.args.action == "get_application_scopes":
-            self.get_application_scopes()
+        if self.args.action == "get_app_scope":
+            self.get_app_scope()
+        if self.args.action == "get_app_scopes":
+            self.get_app_scopes()
         if self.args.action == "get_flow_dimensions":
             self.get_flow_dimensions()
         if self.args.action == "get_flow_metrics":
@@ -157,11 +157,11 @@ class Tetration(object):
         if self.args.userrole is not None:
             self.add_user_to_role()
 
-    def create_application(self):
+    def create_app(self):
         """
         Create An Application
         """
-        self.get_applications()
+        self.get_apps()
         if self.app_name is None:
             req_payload = {
                 "app_scope_id": self.app_scope_id,
@@ -171,19 +171,19 @@ class Tetration(object):
             }
             resp = self.restclient.post('/applications', json_body=json.dumps(req_payload))
             if resp.status_code == 200:
-                self.get_applications()
-                self.get_application()
+                self.get_apps()
+                self.get_app()
                 print colored('Application successfully created....Details above...', 'yellow')
         else:
-            self.get_application()
+            self.get_app()
             print colored('Application already exists....Details above...',
                           'yellow')
 
-    def delete_application(self):
+    def delete_app(self):
         """
         Delete An Application
         """
-        self.get_applications()
+        self.get_apps()
         if self.app_name is not None:
             resp = self.restclient.delete(
                 '/applications/%s' % self.args.appid)
@@ -194,25 +194,25 @@ class Tetration(object):
             print colored('Application with id: %s' % self.args.appid, 'yellow') + " not found..."
 
     # Need to finish this functionality
-    def create_application_scope(self):
+    def create_app_scope(self):
         """
         Create An Application Scope
         """
 
-    def get_application(self):
+    def get_app(self):
         """
         Capture Specific Application
         """
-        if self.args.action == "create_application":
+        if self.args.action == "create_app":
             resp = self.restclient.get('/applications/%s/details' % self.app_id)
-        if self.args.action == "get_application":
+        if self.args.action == "get_app":
             if self.args.appid is not None and self.args.appname is None:
                 resp = self.restclient.get(
                     '/applications/%s/details' % self.args.appid)
                 if resp.status_code == 404:
                     print colored('Application not found...', 'yellow')
             if self.args.appid is None and self.args.appname is not None:
-                self.get_applications()
+                self.get_apps()
                 if self.app_id is not None:
                     resp = self.restclient.get(
                         '/applications/%s/details' % self.app_id)
@@ -223,14 +223,14 @@ class Tetration(object):
             python_data = json.loads(resp.text)
             print json.dumps(python_data, indent=4)
 
-    def get_applications(self):
+    def get_apps(self):
         """
         Capture Applications
         """
         resp = self.restclient.get('/applications')
         if resp.status_code == 200:
             python_data = json.loads(resp.text)
-            if self.args.action == "create_application":
+            if self.args.action == "create_app":
                 if self.args.appscopeid is not None and self.args.appscopeshortname is None:
                     for key in python_data:
                         if (key['app_scope_id'] == self.args.appscopeid and
@@ -242,7 +242,7 @@ class Tetration(object):
                             self.app_name = None
                             self.app_scope_id = self.args.appscopeid
                 if self.args.appscopeid is None and self.args.appscopeshortname is not None:
-                    self.get_application_scopes()
+                    self.get_app_scopes()
                     if self.app_scope_id is not None:
                         for key in python_data:
                             if (key['app_scope_id'] == self.app_scope_id and
@@ -252,7 +252,7 @@ class Tetration(object):
                                 return
                             else:
                                 self.app_name = None
-            if self.args.action == "delete_application":
+            if self.args.action == "delete_app":
                 for key in python_data:
                     if key['id'] == self.args.appid:
                         self.app_name = key['name']
@@ -260,7 +260,7 @@ class Tetration(object):
                     else:
                         self.app_name = None
                 return
-            if (self.args.action == "get_application" and self.args.appname is not None and
+            if (self.args.action == "get_app" and self.args.appname is not None and
                     self.args.appscopeid is not None):
                 for key in python_data:
                     if (key['name'] == self.args.appname and
@@ -273,7 +273,7 @@ class Tetration(object):
                 if self.args.savetofile:
                     self.save_results(python_data)
                 else:
-                    if self.args.action != "create_application":
+                    if self.args.action != "create_app":
                         print json.dumps(python_data, indent=4)
 
     # def get_app_scope_ids(self):
@@ -302,14 +302,14 @@ class Tetration(object):
     #         # #        colored('Parent Id: ', 'yellow') + key['parent_app_scope_id'] + '  ' +
     #         # #        colored('Scope Id: ', 'yellow') + key['id'])
 
-    def get_application_scope(self):
+    def get_app_scope(self):
         """
         Capture A Specific Application Scope
         """
         if self.args.appscopeid is not None and self.args.appscopeshortname is None:
             resp = self.restclient.get('/app_scopes/%s' % self.args.appscopeid)
         if self.args.appscopeid is None and self.args.appscopeshortname is not None:
-            self.get_application_scopes()
+            self.get_app_scopes()
             if self.app_scope_id is not None:
                 resp = self.restclient.get(
                     '/app_scopes/%s' % self.app_scope_id)
@@ -322,15 +322,15 @@ class Tetration(object):
         else:
             print "Application Scope Id or Application Scope Short Name Does Not Exist!..."
 
-    def get_application_scopes(self):
+    def get_app_scopes(self):
         """
         Capture Application Scopes
         """
         resp = self.restclient.get('/app_scopes')
         if resp.status_code == 200:
             python_data = json.loads(resp.text)
-            if (self.args.action == "create_application" or
-                    self.args.action == "get_application_scope"):
+            if (self.args.action == "create_app" or
+                    self.args.action == "get_app_scope"):
                 if self.args.appscopeid is None and self.args.appscopeshortname is not None:
                     for key in python_data:
                         if key['short_name'] == self.args.appscopeshortname:
@@ -481,12 +481,12 @@ class Tetration(object):
         parser = argparse.ArgumentParser(description='Tetration Commands...')
         parser.add_argument(
             'action', help='Define action to take', choices=['add_users', 'add_user_to_role',
-                                                             'create_application',
-                                                             'delete_application',
-                                                             'get_application',
-                                                             'get_applications',
-                                                             'get_application_scope',
-                                                             'get_application_scopes',
+                                                             'create_app',
+                                                             'delete_app',
+                                                             'get_app',
+                                                             'get_apps',
+                                                             'get_app_scope',
+                                                             'get_app_scopes',
                                                              'get_flow_dimensions',
                                                              'get_flow_metrics',
                                                              'get_inventory_dimensions',
@@ -533,7 +533,7 @@ class Tetration(object):
                     self.args.useremail is None):
                 parser.error(
                     '--userfirstname and --userlastname and --useremail ARE REQUIRED!')
-        if self.args.action == "create_application":
+        if self.args.action == "create_app":
             if (self.args.appname is None or self.args.appdescription is None or
                     self.args.appscopeprimary is None):
                 parser.error('--appname, --appdescription, and --appscopeprimary are REQUIRED!')
@@ -544,16 +544,16 @@ class Tetration(object):
                 if self.args.appscopeid is None:
                     parser.error(
                         '--appscopeid or --appscopeshortname is REQUIRED!')
-        if self.args.action == "delete_application":
+        if self.args.action == "delete_app":
             if self.args.appid is None:
                 parser.error('--appid is REQUIRED!')
-        if self.args.action == "get_application":
+        if self.args.action == "get_app":
             if self.args.appname is None and self.args.appid is None:
                 parser.error('--appname or --appid are REQUIRED!')
             if (self.args.appname is not None and
                     self.args.appid is None and self.args.appscopeid is None):
                 parser.error('--appscopeid is REQUIRED when using --appname!')
-        if self.args.action == "get_application_scope":
+        if self.args.action == "get_app_scope":
             if self.args.appscopeid is None:
                 if self.args.appscopeshortname is None:
                     parser.error('--appscopeid or --appscopename is REQUIRED!')
