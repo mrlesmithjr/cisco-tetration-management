@@ -48,6 +48,10 @@ Create an application
 ---------------------
 python CiscoTetrationManagement.py create_application --apiendpoint https://172.16.5.4 --credsfile api_credentials.json --appname "Test App" --appdescription "Test App Using API" --appscopeprimary False
 
+Delete an application
+---------------------
+python CiscoTetrationManagement.py delete_application --apiendpoint https://172.16.5.4 --credsfile api_credentials.json --appid 59cdc1e7755f0225066ce9d4
+
 """
 class Tetration(object):
     """
@@ -78,6 +82,8 @@ class Tetration(object):
             self.add_users()
         if self.args.action == "create_application":
             self.create_application()
+        if self.args.action == "delete_application":
+            self.delete_application()
         if self.args.action == "get_application":
             self.get_application()
         if self.args.action == "get_applications":
@@ -170,8 +176,21 @@ class Tetration(object):
         else:
             self.get_application()
             print colored('Application already exists....Details above...',
-                            'yellow')
+                          'yellow')
 
+    def delete_application(self):
+        """
+        Delete An Application
+        """
+        self.get_applications()
+        if self.app_name is not None:
+            resp = self.restclient.delete(
+                '/applications/%s' % self.args.appid)
+            if resp.status_code == 200:
+                print colored(('Application with id: %s') % self.args.appid +
+                              " successfully deleted...")
+        else:
+            print colored('Application with id: %s' % self.args.appid, 'yellow') + " not found..."
 
     # Need to finish this functionality
     def create_application_scope(self):
@@ -230,9 +249,19 @@ class Tetration(object):
                                 return
                             else:
                                 self.app_name = None
-            if self.args.action == "get_application" and self.args.appname is not None and self.args.appscopeid is not None:
+            if self.args.action == "delete_application":
                 for key in python_data:
-                    if key['name'] == self.args.appname and key['app_scope_id'] == self.args.appscopeid:
+                    if key['id'] == self.args.appid:
+                        self.app_name = key['name']
+                        return
+                    else:
+                        self.app_name = None
+                return
+            if (self.args.action == "get_application" and self.args.appname is not None and
+                    self.args.appscopeid is not None):
+                for key in python_data:
+                    if (key['name'] == self.args.appname and
+                            key['app_scope_id'] == self.args.appscopeid):
                         self.app_id = key['id']
                         return
                     else:
@@ -449,6 +478,7 @@ class Tetration(object):
         parser.add_argument(
             'action', help='Define action to take', choices=['add_users', 'add_user_to_role',
                                                              'create_application',
+                                                             'delete_application',
                                                              'get_application',
                                                              'get_applications',
                                                              'get_application_scope',
@@ -466,25 +496,30 @@ class Tetration(object):
             '--apikey', help='Tetration API Key', required=False)
         parser.add_argument(
             '--apisecret', help='Tetration API Secret', required=False)
-        parser.add_argument('--appdescription', help='Application Description', required=False)
+        parser.add_argument(
+            '--appdescription', help='Application Description', required=False)
         parser.add_argument(
             '--appname', help='Application Name', required=False)
         parser.add_argument(
             '--appid', help='Application Id', required=False)
-        parser.add_argument('--appscopeid', help='Application Scope Id', required=False)
-        parser.add_argument('--appscopeshortname', help='Application Scope Short Name', required=False)
+        parser.add_argument(
+            '--appscopeid', help='Application Scope Id', required=False)
+        parser.add_argument(
+            '--appscopeshortname', help='Application Scope Short Name', required=False)
         parser.add_argument(
             '--appscopeprimary', help='Application Scope Primary(True|False)', required=False)
         parser.add_argument(
             '--credsfile', help='Path To Credentials file', required=False)
         parser.add_argument(
             '--savetofile', help='Define file to save results to')
-        parser.add_argument('--useremail', help='User email', required=False)
-        parser.add_argument('--userfirstname',
-                            help='User first name', required=False)
+        parser.add_argument(
+            '--useremail', help='User email', required=False)
+        parser.add_argument(
+            '--userfirstname', help='User first name', required=False)
         parser.add_argument(
             '--userlastname', help='User last name', required=False)
-        parser.add_argument('--userrole', help='Role name to add user to', required=False)
+        parser.add_argument(
+            '--userrole', help='Role name to add user to', required=False)
 
         self.args = parser.parse_args()
         # if self.args.action == "add_user_to_role":
@@ -505,10 +540,14 @@ class Tetration(object):
                 if self.args.appscopeid is None:
                     parser.error(
                         '--appscopeid or --appscopeshortname is REQUIRED!')
+        if self.args.action == "delete_application":
+            if self.args.appid is None:
+                parser.error('--appid is REQUIRED!')
         if self.args.action == "get_application":
             if self.args.appname is None and self.args.appid is None:
                 parser.error('--appname or --appid are REQUIRED!')
-            if self.args.appname is not None and self.args.appid is None and self.args.appscopeid is None:
+            if (self.args.appname is not None and
+                    self.args.appid is None and self.args.appscopeid is None):
                 parser.error('--appscopeid is REQUIRED when using --appname!')
         if self.args.action == "get_application_scope":
             if self.args.appscopeid is None:
@@ -521,7 +560,8 @@ class Tetration(object):
         if self.args.action == "remove_user_from_role":
             if (self.args.userfirstname is None or self.args.userlastname is None or
                     self.args.useremail is None or self.args.userrole is None):
-                parser.error('--userfirstname, --userlastname, --useremail, and --userrole ARE REQUIRED!')
+                parser.error(
+                    '--userfirstname, --userlastname, --useremail, and --userrole ARE REQUIRED!')
         if self.args.credsfile is None:
             if self.args.apikey is None or self.args.apisecret is None:
                 parser.error('--apikey and --apisecret ARE REQUIRED!')
