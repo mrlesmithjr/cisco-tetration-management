@@ -413,10 +413,17 @@ class Tetration(object):
         resp = self.restclient.get('/filters/inventories')
         if resp.status_code == 200:
             python_data = json.loads(resp.text)
-            if self.args.savetofile:
-                self.save_results(python_data)
+            if self.args.appscopeid is not None:
+                data = []
+                for key in python_data:
+                    if key['app_scope_id'] == self.args.appscopeid:
+                        data.append(key)
+                print json.dumps(data, indent=4)
             else:
-                print json.dumps(python_data, indent=4)
+                if self.args.savetofile:
+                    self.save_results(python_data)
+                else:
+                    print json.dumps(python_data, indent=4)
 
     def get_sensors(self):
         """
