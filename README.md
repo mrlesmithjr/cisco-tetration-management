@@ -5,24 +5,24 @@ environment using the OpenAPI included within the product. Currently the functio
 limited and leverages a `Python` [script](./CiscoTetrationManagement.py). Over time this will
 likely grow to leveraging [Ansible](https://www.ansible.com).
 
-
 ## Setting Up Environment
 
 ### Windows Server 2012R2+/Windows 10
 
 #### Requirements
 
->Note: [Chocolatey](https://chocolatey.org) needs to be installed in order to install required packages.
+##### Windows PowerShell
 
-- Install Chocolatey
+> Note: [Chocolatey](https://chocolatey.org) needs to be installed in order to install required packages.
 
-  - Open PowerShell as an administrator:
+-   Install Chocolatey
+    -   Open PowerShell as an administrator:
 
 ```Powershell
 Set-ExecutionPolicy Bypass; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
 ```
 
-- Install Windows Apps
+-   Install Windows Apps
 
 ```Powershell
 choco install git googlechrome python2
@@ -30,10 +30,16 @@ choco install git googlechrome python2
 
 After installing the above exit PowerShell and then re-open PowerShell otherwise `pip` will fail as not found.
 
-- Install Python Virtualenv
+-   Install Python Virtualenv
 
 ```Powershell
 pip install virtualenv
+```
+
+##### Windows Cygwin
+
+```PowerShell
+./setup-x86_64 -P `awk 'NR==1{printf \$1}{printf ",%s", \$1}' packagelist`
 ```
 
 ### macOS/Linux
@@ -76,7 +82,7 @@ MIT
 
 Larry Smith Jr.
 
-- [@mrlesmithjr](https://www.twitter.com/mrlesmithjr)
-- [EverythingShouldBeVirtual](http://www.everythingshouldbevirtual.com)
-- [mrlesmithjr.com](http://mrlesmithjr.com)
-- mrlesmithjr [at] gmail.com
+-   [@mrlesmithjr](https://www.twitter.com/mrlesmithjr)
+-   [EverythingShouldBeVirtual](http://www.everythingshouldbevirtual.com)
+-   [mrlesmithjr.com](http://mrlesmithjr.com)
+-   mrlesmithjr [at] gmail.com
