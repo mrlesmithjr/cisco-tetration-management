@@ -116,6 +116,8 @@ class Tetration(object):
             self.create_app_scope()
         if self.args.action == "delete_app":
             self.delete_app()
+        if self.args.action == "delete_users":
+            self.delete_users()
         if self.args.action == "get_app":
             self.get_app()
         if self.args.action == "get_app_clusters":
@@ -265,6 +267,49 @@ class Tetration(object):
         else:
             print colored('Application with id: %s'
                           % self.args.appid, 'yellow') + " not found..."
+
+    def delete_users(self):
+        """Delete users."""
+        if self.args.readcsv is not None:
+            try:
+                f = open(self.args.readcsv)
+                csv_f = csv.reader(f)
+                next(csv_f, None)  # skip headers
+                for row in csv_f:
+                    self.args.useremail = row[0]
+                    self.args.userfirstname = row[1]
+                    self.args.userlastname = row[2]
+                    self.get_user()
+                    if self.user_id is not None:
+                        resp = self.restclient.delete(
+                            '/users/%s' % self.user_id)
+                        if resp.status_code == 200:
+                            print colored(
+                                'User %s %s %s with id: %s was deleted'
+                                % (self.args.userfirstname,
+                                   self.args.userlastname,
+                                   self.args.useremail,
+                                   self.user_id),
+                                'yellow')
+                    else:
+                        print colored('User does not exist', 'yellow')
+            finally:
+                f.close()
+        else:
+            self.get_user()
+            if self.user_id is not None:
+                resp = self.restclient.delete(
+                    '/users/%s' % self.user_id)
+                if resp.status_code == 200:
+                    print colored(
+                        'User %s %s %s with id: %s was deleted'
+                        % (self.args.userfirstname,
+                           self.args.userlastname,
+                           self.args.useremail,
+                           self.user_id),
+                        'yellow')
+            else:
+                print colored('User does not exist', 'yellow')
 
     # Need to finish this functionality
     def create_app_scope(self):
@@ -600,13 +645,13 @@ class Tetration(object):
         parser.add_argument(
             'action', help='Define action to take',
             choices=['add_users', 'add_user_to_role', 'create_app',
-                     'create_app_scope',
-                     'delete_app', 'get_app', 'get_app_clusters', 'get_apps',
-                     'get_app_scope', 'get_app_scopes', 'get_flow_dimensions',
-                     'get_flow_metrics', 'get_inventory_dimensions',
-                     'get_inventory_filters', 'get_switches', 'get_user_roles',
-                     'get_sensors', 'get_user', 'get_users',
-                     'remove_user_from_role'])
+                     'create_app_scope', 'delete_app', 'delete_users',
+                     'get_app', 'get_app_clusters',
+                     'get_apps', 'get_app_scope', 'get_app_scopes',
+                     'get_flow_dimensions', 'get_flow_metrics',
+                     'get_inventory_dimensions', 'get_inventory_filters',
+                     'get_switches', 'get_user_roles', 'get_sensors',
+                     'get_user', 'get_users', 'remove_user_from_role'])
         parser.add_argument(
             '--apiendpoint', help='Tetration API Endpoint', required=False,
             default='https://172.16.5.4')
@@ -647,6 +692,14 @@ class Tetration(object):
         # if self.args.action == "add_user_to_role":
 
         if self.args.action == "add_users":
+            if self.args.readcsv is None:
+                if (self.args.userfirstname is None or
+                        self.args.userlastname is None or
+                        self.args.useremail is None):
+                    parser.error(
+                        '--userfirstname and --userlastname and '
+                        '--useremail ARE REQUIRED!')
+        if self.args.action == "delete_users":
             if self.args.readcsv is None:
                 if (self.args.userfirstname is None or
                         self.args.userlastname is None or
