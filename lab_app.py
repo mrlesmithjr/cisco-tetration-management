@@ -106,6 +106,8 @@ class Tetration(object):
 
         Based on action passed determine which action to take.
         """
+        if self.args.action == "add_user_roles":
+            self.add_user_roles()
         if self.args.action == "add_user_to_role":
             self.add_user_to_role()
         if self.args.action == "add_users":
@@ -150,6 +152,26 @@ class Tetration(object):
             self.get_users()
         if self.args.action == "remove_user_from_role":
             self.remove_user_from_role()
+
+    def add_user_roles(self):
+        """Add roles."""
+        self.get_user_roles()
+        if self.args.userrole not in self.roles:
+            if self.args.userroledescription is None:
+                self.args.userroledescription = self.args.userrole
+            req_payload = {
+                "name": self.args.userrole,
+                "description": self.args.userroledescription
+            }
+            resp = self.restclient.post(
+                '/roles', json_body=json.dumps(req_payload)
+            )
+            if resp.status_code == 200:
+                print colored('Role: \"%s\" successfully added'
+                              % self.args.userrole, 'yellow')
+        else:
+            print colored('User role: \"%s\" already exists' % self.args.userrole,
+                          'yellow')
 
     def add_user_to_role(self):
         """Add A User To A role."""
@@ -205,6 +227,7 @@ class Tetration(object):
                     if row[3]:
                         for role in row[3].split(','):
                             self.args.userrole = role
+                            # self.args.add_user_roles()
                             self.add_user_to_role()
             finally:
                 f.close()
@@ -606,6 +629,11 @@ class Tetration(object):
         resp = self.restclient.get('/roles')
         if resp.status_code == 200:
             python_data = json.loads(resp.text)
+            if self.args.action == "add_user_roles":
+                self.roles = []
+                for key in python_data:
+                    self.roles.append(key['name'])
+                return
             if self.args.action == "get_user_roles":
                 if self.args.savetofile:
                     self.save_results(python_data)
@@ -621,8 +649,6 @@ class Tetration(object):
                             return
                         else:
                             self.user_role_id = None
-                # if self.user_role_id is None:
-                #     print self.args.userrole + 'Does not exist... Must be created first'
 
     def get_users(self):
         """Capture Users."""
@@ -644,14 +670,15 @@ class Tetration(object):
         parser = argparse.ArgumentParser(description='Tetration Commands...')
         parser.add_argument(
             'action', help='Define action to take',
-            choices=['add_users', 'add_user_to_role', 'create_app',
-                     'create_app_scope', 'delete_app', 'delete_users',
-                     'get_app', 'get_app_clusters',
+            choices=['add_user_roles', 'add_users', 'add_user_to_role',
+                     'create_app', 'create_app_scope', 'delete_app',
+                     'delete_users', 'get_app', 'get_app_clusters',
                      'get_apps', 'get_app_scope', 'get_app_scopes',
                      'get_flow_dimensions', 'get_flow_metrics',
                      'get_inventory_dimensions', 'get_inventory_filters',
-                     'get_switches', 'get_user_roles', 'get_sensors',
-                     'get_user', 'get_users', 'remove_user_from_role'])
+                     'get_switches', 'get_user_roles',
+                     'get_sensors', 'get_user', 'get_users',
+                     'remove_user_from_role'])
         parser.add_argument(
             '--apiendpoint', help='Tetration API Endpoint', required=False,
             default='https://172.16.5.4')
@@ -687,6 +714,10 @@ class Tetration(object):
             '--userlastname', help='User last name', required=False)
         parser.add_argument(
             '--userrole', help='Role name to add user to', required=False)
+        parser.add_argument(
+            '--userroledescription', help='Role name description',
+            required=False
+        )
 
         self.args = parser.parse_args()
         # if self.args.action == "add_user_to_role":
