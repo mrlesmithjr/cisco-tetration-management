@@ -3,6 +3,7 @@
 
 import argparse
 import json
+import csv
 from tetpyclient import RestClient
 from termcolor import colored
 
@@ -75,6 +76,11 @@ python CiscoTetrationManagement.py delete_app \
 --apiendpoint https://172.16.5.4 --credsfile api_credentials.json \
 --appid 59cdc1e7755f0225066ce9d4
 
+Create users with CSV file as input
+-----------------------------------
+python CiscoTetrationManagement.py add_users \
+--apiendpoint https://172.16.5.4 --credsfile api_credentials.json \
+--readcsv users.csv
 """
 
 
@@ -106,6 +112,8 @@ class Tetration(object):
             self.add_users()
         if self.args.action == "create_app":
             self.create_app()
+        if self.args.action == "create_app_scope":
+            self.create_app_scope()
         if self.args.action == "delete_app":
             self.delete_app()
         if self.args.action == "get_app":
@@ -132,6 +140,8 @@ class Tetration(object):
             self.get_sensors()
         if self.args.action == "get_switches":
             self.get_switches()
+        if self.args.action == "get_user":
+            self.get_user()
         if self.args.action == "get_user_roles":
             self.get_user_roles()
         if self.args.action == "get_users":
@@ -164,24 +174,57 @@ class Tetration(object):
 
     def add_users(self):
         """Add Users."""
-        self.get_user()
-        if self.user_id is not None:
-            print colored('User already exists with ID: ',
-                          'yellow') + self.user_id
+        if self.args.readcsv is not None:
+            try:
+                f = open(self.args.readcsv)
+                csv_f = csv.reader(f)
+                next(csv_f, None)  # skip headers
+                for row in csv_f:
+                    self.args.useremail = row[0]
+                    self.args.userfirstname = row[1]
+                    self.args.userlastname = row[2]
+                    self.get_user()
+                    if self.user_id is not None:
+                        print colored('User already exists with ID: ',
+                                      'yellow') + self.user_id
+                    else:
+                        req_payload = {
+                            "first_name": self.args.userfirstname,
+                            "last_name": self.args.userlastname,
+                            "email": self.args.useremail
+                        }
+                        resp = self.restclient.post(
+                            '/users', json_body=json.dumps(req_payload))
+                        # if resp.status_code == 200:
+                        #     self.get_user()
+                        #     print colored('User successfully created with ID: ',
+                        #                   'yellow') + self.user_id
+                    self.get_user()
+                    if row[3]:
+                        for role in row[3].split(','):
+                            self.args.userrole = role
+                            self.add_user_to_role()
+            finally:
+                f.close()
         else:
-            req_payload = {
-                "first_name": self.args.userfirstname,
-                "last_name": self.args.userlastname,
-                "email": self.args.useremail
-            }
-            resp = self.restclient.post(
-                '/users', json_body=json.dumps(req_payload))
-            if resp.status_code == 200:
-                self.get_user()
-                print colored('User successfully created with ID: ',
+            self.get_user()
+            if self.user_id is not None:
+                print colored('User already exists with ID: ',
                               'yellow') + self.user_id
-        if self.args.userrole is not None:
-            self.add_user_to_role()
+            else:
+                req_payload = {
+                    "first_name": self.args.userfirstname,
+                    "last_name": self.args.userlastname,
+                    "email": self.args.useremail
+                }
+                resp = self.restclient.post(
+                    '/users', json_body=json.dumps(req_payload))
+                if resp.status_code == 200:
+                    self.get_user()
+                    print colored('User successfully created with ID: ',
+                                  'yellow') + self.user_id
+            if self.args.userrole is not None:
+                self.add_user_to_role()
 
     def create_app(self):
         """Create An Application."""
@@ -226,6 +269,44 @@ class Tetration(object):
     # Need to finish this functionality
     def create_app_scope(self):
         """Create An Application Scope."""
+        if self.args.readcsv is not None:
+            try:
+                f = open(self.args.readcsv)
+                csv_f = csv.reader(f)
+                next(csv_f, None)  # skip headers
+                for row in csv_f:
+                    self.args.appscopeshortname = row[4]
+                    self.get_app_scope()
+                    if self.app_scope_id is not None:
+                        resp = self.restclient.get('/app_scopes/%s'
+                                                   % self.app_scope_id)
+                        if resp.status_code == 200:
+                            python_data = json.loads(resp.text)
+                            if python_data['child_app_scope_ids'] == []:
+                                req_payload = {
+                                    "short_name": "%s" % row[5],
+                                    "parent_app_scope_id": self.app_scope_id
+                                }
+                                resp = self.restclient.post(
+                                    '/app_scopes', json_body=json.dumps(req_payload))
+                                print resp
+                            else:
+                                for _child_app_scope_id in python_data['child_app_scope_ids']:
+                                    resp = self.restclient.get('/app_scopes/%s'
+                                                               % _child_app_scope_id)
+                                    if resp.status_code == 200:
+                                        python_data = json.loads(resp.text)
+                                        if python_data['short_name'] == row[5]:
+                                            return
+                                        else:
+                                            req_payload = {
+                                                "short_name": "%s" % row[5],
+                                                "parent_app_scope_id": self.app_scope_id
+                                            }
+                                            resp = self.restclient.post(
+                                                '/app_scopes', json_body=json.dumps(req_payload))
+            finally:
+                f.close()
 
     def get_app(self):
         """Capture Specific Application."""
@@ -358,13 +439,14 @@ class Tetration(object):
                     '/app_scopes/%s' % self.app_scope_id)
             else:
                 resp = None
-        if resp is not None:
-            if resp.status_code == 200:
-                python_data = json.loads(resp.text)
-                print json.dumps(python_data, indent=4)
-        else:
-            print ("Application Scope Id or Application Scope Short Name "
-                   "Does Not Exist!...")
+        if self.args.action != "create_app_scope":
+            if resp is not None:
+                if resp.status_code == 200:
+                    python_data = json.loads(resp.text)
+                    print json.dumps(python_data, indent=4)
+            else:
+                print ("Application Scope Id or Application Scope Short Name "
+                       "Does Not Exist!...")
 
     def get_app_scopes(self):
         """Capture Application Scopes."""
@@ -372,6 +454,7 @@ class Tetration(object):
         if resp.status_code == 200:
             python_data = json.loads(resp.text)
             if (self.args.action == "create_app" or
+                    self.args.action == "create_app_scope" or
                     self.args.action == "get_app_scope"):
                 if (self.args.appscopeid is None and
                         self.args.appscopeshortname is not None):
@@ -462,10 +545,13 @@ class Tetration(object):
             for key in python_data:
                 if (key['first_name'] == self.args.userfirstname and
                         key['last_name'] == self.args.userlastname and
-                        key['email'] == self.args.useremail):
+                        key['email'] == self.args.useremail.lower()):
                     self.user_id = key['id']
                     self.user_role_ids = key['role_ids']
-                    return
+                    if self.args.action != "get_user":
+                        return
+                    else:
+                        print key['id']
                 else:
                     self.user_id = None
                     self.user_role_ids = []
@@ -514,11 +600,13 @@ class Tetration(object):
         parser.add_argument(
             'action', help='Define action to take',
             choices=['add_users', 'add_user_to_role', 'create_app',
+                     'create_app_scope',
                      'delete_app', 'get_app', 'get_app_clusters', 'get_apps',
                      'get_app_scope', 'get_app_scopes', 'get_flow_dimensions',
                      'get_flow_metrics', 'get_inventory_dimensions',
                      'get_inventory_filters', 'get_switches', 'get_user_roles',
-                     'get_sensors', 'get_users', 'remove_user_from_role'])
+                     'get_sensors', 'get_user', 'get_users',
+                     'remove_user_from_role'])
         parser.add_argument(
             '--apiendpoint', help='Tetration API Endpoint', required=False,
             default='https://172.16.5.4')
@@ -543,6 +631,7 @@ class Tetration(object):
         parser.add_argument(
             '--credsfile', help='Path To Credentials file', required=False,
             default="~\\downloads\\api_credentials.json")
+        parser.add_argument('--readcsv', help='Read input from CSV')
         parser.add_argument(
             '--savetofile', help='Define file to save results to')
         parser.add_argument(
@@ -558,12 +647,13 @@ class Tetration(object):
         # if self.args.action == "add_user_to_role":
 
         if self.args.action == "add_users":
-            if (self.args.userfirstname is None or
-                    self.args.userlastname is None or
-                    self.args.useremail is None):
-                parser.error(
-                    '--userfirstname and --userlastname and '
-                    '--useremail ARE REQUIRED!')
+            if self.args.readcsv is None:
+                if (self.args.userfirstname is None or
+                        self.args.userlastname is None or
+                        self.args.useremail is None):
+                    parser.error(
+                        '--userfirstname and --userlastname and '
+                        '--useremail ARE REQUIRED!')
         if self.args.action == "create_app":
             if self.args.appname is None:
                 parser.error('--appname is REQUIRED!')
