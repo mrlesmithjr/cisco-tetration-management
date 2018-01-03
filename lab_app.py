@@ -363,7 +363,7 @@ class Tetration(object):
             else:
                 print colored('User does not exist', 'yellow')
 
-    # Need to finish this functionality
+    # Need to finish this functionality. Currently only reads in a CSV...
     def create_app_scope(self):
         """Create An Application Scope."""
         if self.args.readcsv is not None:
@@ -372,36 +372,49 @@ class Tetration(object):
                 csv_f = csv.reader(f)
                 next(csv_f, None)  # skip headers
                 for row in csv_f:
-                    self.args.appscopeshortname = row[4]
+                    # We first capture the parent scope id to create scope under
+                    parent_scope_shortname = row[4]
+                    self.args.appscopeshortname = parent_scope_shortname
                     self.get_app_scope()
-                    if self.app_scope_id is not None:
-                        resp = self.restclient.get('/app_scopes/%s'
-                                                   % self.app_scope_id)
+                    parent_scope_id = self.app_scope_id
+                    #
+                    # We now capture the new scope to create
+                    self.args.appscopeshortname = row[0]
+                    self.get_app_scope()
+                    if (self.app_scope_id is None and
+                            parent_scope_id is not None):
+                        req_payload = {
+                            "short_name": row[0],
+                            "short_query": {
+                                "type": row[2],
+                                "field": row[1],
+                                "value": row[3]
+                            },
+                            "parent_app_scope_id": parent_scope_id
+                        }
+                        resp = self.restclient.post(
+                            '/app_scopes', json_body=json.dumps(req_payload))
                         if resp.status_code == 200:
-                            python_data = json.loads(resp.text)
-                            if python_data['child_app_scope_ids'] == []:
-                                req_payload = {
-                                    "short_name": "%s" % row[5],
-                                    "parent_app_scope_id": self.app_scope_id
-                                }
-                                resp = self.restclient.post(
-                                    '/app_scopes', json_body=json.dumps(req_payload))
-                                print resp
-                            else:
-                                for _child_app_scope_id in python_data['child_app_scope_ids']:
-                                    resp = self.restclient.get('/app_scopes/%s'
-                                                               % _child_app_scope_id)
-                                    if resp.status_code == 200:
-                                        python_data = json.loads(resp.text)
-                                        if python_data['short_name'] == row[5]:
-                                            return
-                                        else:
-                                            req_payload = {
-                                                "short_name": "%s" % row[5],
-                                                "parent_app_scope_id": self.app_scope_id
-                                            }
-                                            resp = self.restclient.post(
-                                                '/app_scopes', json_body=json.dumps(req_payload))
+                            print "Successfully created app scope %s" % row[0]
+                    else:
+                        print "Already exists"
+
+                    # We now need to check for any "Dirty" root scopes in order
+                    # to commit the changes.
+                    resp = self.restclient.get(
+                        '/app_scopes/%s' % parent_scope_id
+                    )
+                    if resp.status_code == 200:
+                        python_data = json.loads(resp.text)
+                        if python_data['dirty']:
+                            req_payload = {
+                                "root_app_scope_id": parent_scope_id
+                            }
+                            resp = self.restclient.post(
+                                '/app_scopes/commit_dirty',
+                                json_body=json.dumps(req_payload))
+                            if resp.status_code == 201:
+                                print colored('Job queued', 'yellow')
             finally:
                 f.close()
 
