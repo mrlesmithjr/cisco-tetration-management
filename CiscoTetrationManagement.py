@@ -156,22 +156,51 @@ class Tetration(object):
     def add_user_roles(self):
         """Add roles."""
         self.get_user_roles()
-        if self.args.userrole not in self.roles:
-            if self.args.userroledescription is None:
-                self.args.userroledescription = self.args.userrole
-            req_payload = {
-                "name": self.args.userrole,
-                "description": self.args.userroledescription
-            }
-            resp = self.restclient.post(
-                '/roles', json_body=json.dumps(req_payload)
-            )
-            if resp.status_code == 200:
-                print colored('Role: \"%s\" successfully added'
-                              % self.args.userrole, 'yellow')
+        if self.args.readcsv is not None:
+            try:
+                f = open(self.args.readcsv)
+                csv_f = csv.reader(f)
+                next(csv_f, None)  # skip headers
+                for row in csv_f:
+                    self.args.userrole = row[0]
+                    self.args.userroledescription = row[1]
+                    if self.args.userrole not in self.roles:
+                        if not self.args.userroledescription:
+                            self.args.userroledescription = self.args.userrole
+                        req_payload = {
+                            "name": self.args.userrole,
+                            "description": self.args.userroledescription
+                        }
+                        resp = self.restclient.post(
+                            '/roles', json_body=json.dumps(req_payload)
+                        )
+                        if resp.status_code == 200:
+                            print colored('Role: \"%s\" successfully added'
+                                          % self.args.userrole, 'yellow')
+                    else:
+                        print colored('User role: \"%s\" already exists'
+                                      % self.args.userrole,
+                                      'yellow')
+            finally:
+                f.close()
         else:
-            print colored('User role: \"%s\" already exists' % self.args.userrole,
-                          'yellow')
+            if self.args.userrole not in self.roles:
+                if self.args.userroledescription is None:
+                    self.args.userroledescription = self.args.userrole
+                req_payload = {
+                    "name": self.args.userrole,
+                    "description": self.args.userroledescription
+                }
+                resp = self.restclient.post(
+                    '/roles', json_body=json.dumps(req_payload)
+                )
+                if resp.status_code == 200:
+                    print colored('Role: \"%s\" successfully added'
+                                  % self.args.userrole, 'yellow')
+            else:
+                print colored('User role: \"%s\" already exists'
+                              % self.args.userrole,
+                              'yellow')
 
     def add_user_to_role(self):
         """Add A User To A role."""
