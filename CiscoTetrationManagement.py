@@ -177,6 +177,43 @@ class Tetration(object):
                         if resp.status_code == 200:
                             print colored('Role: \"%s\" successfully added'
                                           % self.args.userrole, 'yellow')
+
+                    # Manage scope capabilities to assign to roles
+                    # Need to cleanup code a bit and maybe move around as this
+                    # may not be completely optimal
+                    if row[2]:
+                        self.args.appscopeshortname = row[2]
+                        self.get_app_scope()
+                        if self.app_scope_id is not None:
+                            if row[3]:
+                                resp = self.restclient.get(
+                                    '/roles'
+                                )
+                                if resp.status_code == 200:
+                                    python_data = json.loads(resp.text)
+                                    for key in python_data:
+                                        if key['name'] == row[0]:
+                                            req_payload = {
+                                                "app_scope_id":
+                                                self.app_scope_id,
+                                                "ability": row[3]
+                                            }
+                                            role_id = key['id']
+                                            resp = self.restclient.post(
+                                                '/roles/%s/capabilities'
+                                                % role_id,
+                                                json_body=json.dumps(
+                                                    req_payload)
+                                            )
+                                            if resp.status_code == 200:
+                                                print colored(
+                                                    'Capability successfully assigned',
+                                                    'yellow')
+                                            if resp.status_code == 400:
+                                                print colored(
+                                                    'Capablity already assigned',
+                                                    'yellow')
+
                     else:
                         print colored('User role: \"%s\" already exists'
                                       % self.args.userrole,
@@ -549,7 +586,8 @@ class Tetration(object):
                     '/app_scopes/%s' % self.app_scope_id)
             else:
                 resp = None
-        if self.args.action != "create_app_scope":
+        if (self.args.action != "create_app_scope" and
+                self.args.action != "add_user_roles"):
             if resp is not None:
                 if resp.status_code == 200:
                     python_data = json.loads(resp.text)
@@ -565,7 +603,8 @@ class Tetration(object):
             python_data = json.loads(resp.text)
             if (self.args.action == "create_app" or
                     self.args.action == "create_app_scope" or
-                    self.args.action == "get_app_scope"):
+                    self.args.action == "get_app_scope" or
+                    self.args.action == "add_user_roles"):
                 if (self.args.appscopeid is None and
                         self.args.appscopeshortname is not None):
                     for key in python_data:
