@@ -140,8 +140,6 @@ class Tetration(object):
             self.get_app_clusters()
         if self.args.action == "get_apps":
             self.get_apps()
-        # if self.args.action == "get_app_scope_ids":
-        #     self.get_app_scope_ids()
         if self.args.action == "get_app_scope":
             self.get_app_scope()
         if self.args.action == "get_app_scopes":
@@ -577,32 +575,6 @@ class Tetration(object):
                 else:
                     if self.args.action != "create_app":
                         print json.dumps(python_data, indent=4)
-
-    # def get_app_scope_ids(self):
-    #     """
-    #     Capture Application Scope IDs
-    #     """
-    #     resp = self.restclient.get('/app_scopes')
-    #     if resp.status_code == 200:
-    #         python_data = json.loads(resp.text)
-    #         data = []
-    #         for key in python_data:
-    #             item = {}
-    #             item.update(
-    #                 {"Application Parent Id": key['parent_app_scope_id']})
-    #             item.update({"Application Scope Id": key['id']})
-    #             item.update({"Application Scope Full Name": key['name']})
-    #             item.update({"Application Scope Full Query": key['query']})
-    #             item.update(
-    #                 {"Application Scope Short Name": key['short_name']})
-    #             item.update(
-    #                 {"Application Scope Short Query": key['short_query']})
-    #             item.update({"Application VRF Id": key['vrf_id']})
-    #             data.append(item)
-    #         print json.dumps(data, indent=4)
-    #         # # print (colored('Scope Name: ', 'yellow') + key['name'] + '  ' +
-    #         # #        colored('Parent Id: ', 'yellow') + key['parent_app_scope_id'] + '  ' +
-    #         # #        colored('Scope Id: ', 'yellow') + key['id'])
 
     def get_app_scope(self):
         """Capture A Specific Application Scope."""
