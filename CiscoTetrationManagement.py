@@ -81,6 +81,18 @@ Create users with CSV file as input
 python CiscoTetrationManagement.py add_users \
 --apiendpoint https://172.16.5.4 --credsfile api_credentials.json \
 --readcsv users.csv
+
+Get a sensor
+------------
+python CiscoTetrationManagement.py get_sensor \
+--apiendpoint https://172.16.5.4 --credsfile api_credentials.json \
+--hostname server001
+
+Delete a sensor
+---------------
+python CiscoTetrationManagement.py delete_sensor \
+--apiendpoint https://172.16.5.4 --credsfile api_credentials.json \
+--hostname server001 --ip 172.27.2.166
 """
 
 
@@ -118,6 +130,8 @@ class Tetration(object):
             self.create_app_scope()
         if self.args.action == "delete_app":
             self.delete_app()
+        if self.args.action == "delete_sensor":
+            self.delete_sensor()
         if self.args.action == "delete_users":
             self.delete_users()
         if self.args.action == "get_app":
@@ -140,6 +154,8 @@ class Tetration(object):
             self.get_inventory_dimensions()
         if self.args.action == "get_inventory_filters":
             self.get_inventory_filters()
+        if self.args.action == "get_sensor":
+            self.get_sensor()
         if self.args.action == "get_sensors":
             self.get_sensors()
         if self.args.action == "get_switches":
@@ -356,6 +372,21 @@ class Tetration(object):
         else:
             print colored('Application with id: %s'
                           % self.args.appid, 'yellow') + " not found..."
+
+    def delete_sensor(self):
+        """Delete A Sensor."""
+        self.get_sensors()
+        if self._sensor_info != {}:
+            if self.args.ip in self._sensor_info['ips']:
+                for _uuid in self._sensor_info['uuids']:
+                    resp = self.restclient.delete(
+                        '/sensors/%s' % _uuid
+                    )
+                    print resp
+                    if resp.status_code == 204:
+                        print colored(
+                            'Sensor %s with uuid: %s has been deleted'
+                            % (self.args.hostname, _uuid), 'yellow')
 
     def delete_users(self):
         """Delete users."""
@@ -666,15 +697,45 @@ class Tetration(object):
                 else:
                     print json.dumps(python_data, indent=4)
 
+    def get_sensor(self):
+        """Get A Sensor."""
+        self.get_sensors()
+
     def get_sensors(self):
         """Capture Sensors."""
         resp = self.restclient.get('/sensors')
         if resp.status_code == 200:
             python_data = json.loads(resp.text)
-            if self.args.savetofile:
-                self.save_results(python_data)
+            if self.args.action == "delete_sensor":
+                _ips = []
+                _uuids = []
+                self._sensor_info = {}
+                for key in python_data['results']:
+                    if key['host_name'] == self.args.hostname:
+                        if "deleted_at" in key:
+                            print "%s already deleted" % self.args.hostname
+                        else:
+                            self._sensor_info['host_name'] = key['host_name']
+                            for _int in key['interfaces']:
+                                if (_int['family_type'] == "IPV4" and
+                                        _int['ip'] != "127.0.0.1"):
+                                    if _int['ip'] not in _ips:
+                                        _ips.append(_int['ip'])
+                            if key['uuid'] not in _uuids:
+                                _uuids.append(key['uuid'])
+                self._sensor_info.update({"ips": _ips})
+                self._sensor_info.update({"uuids": _uuids})
+                return
+            if self.args.action == "get_sensor":
+                for key in python_data['results']:
+                    if key['host_name'] == self.args.hostname:
+                        print json.dumps(key, indent=4)
+                return
             else:
-                print json.dumps(python_data, indent=4)
+                if self.args.savetofile:
+                    self.save_results(python_data)
+                else:
+                    print json.dumps(python_data, indent=4)
 
     def get_switches(self):
         """Capture Switches."""
@@ -753,12 +814,12 @@ class Tetration(object):
             'action', help='Define action to take',
             choices=['add_user_roles', 'add_users', 'add_user_to_role',
                      'create_app', 'create_app_scope', 'delete_app',
-                     'delete_users', 'get_app', 'get_app_clusters',
-                     'get_apps', 'get_app_scope', 'get_app_scopes',
-                     'get_flow_dimensions', 'get_flow_metrics',
-                     'get_inventory_dimensions', 'get_inventory_filters',
-                     'get_switches', 'get_user_roles',
-                     'get_sensors', 'get_user', 'get_users',
+                     'delete_sensor', 'delete_users', 'get_app',
+                     'get_app_clusters', 'get_apps', 'get_app_scope',
+                     'get_app_scopes', 'get_flow_dimensions',
+                     'get_flow_metrics', 'get_inventory_dimensions',
+                     'get_inventory_filters', 'get_switches', 'get_user_roles',
+                     'get_sensor', 'get_sensors', 'get_user', 'get_users',
                      'remove_user_from_role'])
         parser.add_argument(
             '--apiendpoint', help='Tetration API Endpoint', required=False,
@@ -784,6 +845,12 @@ class Tetration(object):
         parser.add_argument(
             '--credsfile', help='Path To Credentials file', required=False,
             default="~\\downloads\\api_credentials.json")
+        parser.add_argument(
+            '--hostname', help='Sensor host name'
+        )
+        parser.add_argument(
+            '--ip', help='IP address', required=False
+        )
         parser.add_argument('--readcsv', help='Read input from CSV')
         parser.add_argument(
             '--savetofile', help='Define file to save results to')
@@ -799,6 +866,9 @@ class Tetration(object):
             '--userroledescription', help='Role name description',
             required=False
         )
+        parser.add_argument(
+            '--vrf', help='VRF Name', required=False
+        )
 
         self.args = parser.parse_args()
         # if self.args.action == "add_user_to_role":
@@ -811,6 +881,10 @@ class Tetration(object):
                     parser.error(
                         '--userfirstname and --userlastname and '
                         '--useremail ARE REQUIRED!')
+        if self.args.action == "delete_sensor":
+            if (self.args.hostname is None or
+                    self.args.ip is None):
+                parser.error('--hostname and --ip are REQUIRED!')
         if self.args.action == "delete_users":
             if self.args.readcsv is None:
                 if (self.args.userfirstname is None or
@@ -849,6 +923,9 @@ class Tetration(object):
                 if self.args.appscopeid is None:
                     parser.error(
                         '--appscopeid or --appscopeshortname is REQUIRED!')
+        if self.args.action == "get_sensor":
+            if self.args.hostname is None:
+                parser.error('--hostname is REQUIRED!')
         if self.args.action == "remove_user_from_role":
             if (self.args.userfirstname is None or
                     self.args.userlastname is None or
