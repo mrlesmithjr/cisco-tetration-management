@@ -93,6 +93,11 @@ Delete a sensor
 python CiscoTetrationManagement.py delete_sensor \
 --apiendpoint https://172.16.5.4 --credsfile api_credentials.json \
 --hostname server001 --ip 172.27.2.166
+
+View VRFs
+---------
+python CiscoTetrationManagement.py get_vrfs \
+--apiendpoint https://172.16.5.4 --credsfile api_credentials.json \
 """
 
 
@@ -164,6 +169,8 @@ class Tetration(object):
             self.get_user_roles()
         if self.args.action == "get_users":
             self.get_users()
+        if self.args.action == "get_vrfs":
+            self.get_vrfs()
         if self.args.action == "remove_user_from_role":
             self.remove_user_from_role()
 
@@ -774,6 +781,13 @@ class Tetration(object):
             else:
                 print json.dumps(python_data, indent=4)
 
+    def get_vrfs(self):
+        """Capture VRFs."""
+        resp = self.restclient.get('/vrfs')
+        if resp.status_code == 200:
+            python_data = json.loads(resp.text)
+            print json.dumps(python_data, indent=4)
+
     def read_cli_args(self):
         """
         Read variables from CLI.
@@ -792,7 +806,7 @@ class Tetration(object):
                      'get_flow_metrics', 'get_inventory_dimensions',
                      'get_inventory_filters', 'get_switches', 'get_user_roles',
                      'get_sensor', 'get_sensors', 'get_user', 'get_users',
-                     'remove_user_from_role'])
+                     'get_vrfs', 'remove_user_from_role'])
         parser.add_argument(
             '--apiendpoint', help='Tetration API Endpoint', required=False,
             default='https://172.16.5.4')
